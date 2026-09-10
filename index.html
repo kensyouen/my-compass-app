@@ -23,7 +23,6 @@
         input { width: 100%; padding: 12px; border: 1px solid #E5E5EA; border-radius: 12px; font-size: 16px; margin-top: 5px; margin-bottom: 15px; background: #FAFAFC; }
         button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
         button:active { opacity: 0.8; }
-        .btn-secondary { background: #E5E5EA; color: var(--primary); margin-top: 10px; }
         .btn-ai { background: linear-gradient(135deg, #FF2D55, #FF9500); margin-top: 15px; }
         
         .metric-box { display: flex; justify-content: space-between; align-items: center; text-align: center; }
@@ -33,7 +32,6 @@
         .m-sub { font-size: 12px; color: var(--sub); margin-top: 5px; line-height: 1.4; }
         
         .badge { background: #FFF4E5; color: #FF9500; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; display: inline-block; margin-bottom: 15px; }
-        .badge-success { background: #E5F8ED; color: #34C759; }
         
         /* 画面下部のタブバー */
         .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); display: flex; border-top: 1px solid #E5E5EA; padding-bottom: env(safe-area-inset-bottom); z-index: 100;}
@@ -55,6 +53,7 @@
         
         .alert { padding: 15px; border-radius: 12px; margin-top: 15px; font-size: 14px; line-height: 1.5; }
         .alert-error { background: #FFEEEE; color: #FF3B30; border-left: 4px solid #FF3B30;}
+        .alert-success { background: #E5F8ED; color: #34C759; }
     </style>
 </head>
 <body>
@@ -65,7 +64,6 @@
     // ==========================================
     const GAS_URL = https://script.google.com/macros/s/AKfycbyktylHm4zlIDgiUEZUT4JKIIcIxVN75_atcYmswGZpcTkpxqUODsydkKbAHQbbr0ZP/exec;
     const APP_PASSWORD = kensyouen@0722;
-    
     // ==========================================
 </script>
 
@@ -83,7 +81,7 @@
     <button onclick="login()">ログイン</button>
 </div>
 
-<!-- アプリメイン画面（ログイン後に表示） -->
+<!-- アプリメイン画面 -->
 <div id="appScreen" class="hidden">
     
     <!-- タブ1: ホーム -->
@@ -136,11 +134,11 @@
                 <hr style="border:0; border-top:1px solid #E5E5EA; margin:10px 0;">
                 <div style="display:flex; gap:10px;">
                     <div style="flex:1"><label style="font-size:12px;">食費・日用品</label><input type="number" id="s_food"></div>
-                    <div style="flex:1"><label style="font-size:12px;">水道・光熱費</label><input type="number" id="s_util" step="0.1"></div>
+                    <div style="flex:1"><label style="font-size:12px;">水道光熱費</label><input type="number" id="s_util" step="0.1"></div>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <div style="flex:1"><label style="font-size:12px;">通信費</label><input type="number" id="s_tele" step="0.1"></div>
-                    <div style="flex:1"><label style="font-size:12px;">車(保険等)</label><input type="number" id="s_car"></div>
+                    <div style="flex:1"><label style="font-size:12px;">車(保険積立)</label><input type="number" id="s_car"></div>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <div style="flex:1"><label style="font-size:12px;">教育(塾等)</label><input type="number" id="s_edu"></div>
@@ -168,7 +166,7 @@
 
     <!-- ボトムタブバー -->
     <div class="tab-bar">
-        <div class="tab-item active" id="btnHome" onclick="switchTab('Home')"><span class="tab-icon">📊</span>ダッシュボード</div>
+        <div class="tab-item active" id="btnHome" onclick="switchTab('Home')"><span class="tab-icon">📊</span>ダッシュ</div>
         <div class="tab-item" id="btnPlan" onclick="switchTab('Plan')"><span class="tab-icon">⚙️</span>詳細設定</div>
     </div>
 </div>
@@ -215,11 +213,11 @@
         try {
             const res = await fetch(GAS_URL);
             const json = await res.json();
-            if(json.status === "success") {
+            if(json.status === "success" && json.data) {
                 for(let key in json.data) { state[key] = parseFloat(json.data[key]) || 0; }
             }
             updateUI();
-        } catch(e) { alert("データ取得エラー"); }
+        } catch(e) { alert("データ取得に失敗しました"); }
         hideLoader();
     }
 
@@ -231,14 +229,12 @@
                 body: JSON.stringify({ action: "save", data: state })
             });
             updateUI();
-        } catch(e) { alert("保存エラー"); }
+        } catch(e) { alert("保存に失敗しました"); }
         hideLoader();
     }
 
     async function getAIAdvice() {
         showLoader("AIが最新ニュースを分析中...");
-        
-        // 乖離額等の計算データを追加して送る
         let incBase = (state.inc_h_m*12 + state.inc_h_b) + (state.inc_w_m*12 + state.inc_w_b);
         let diffTotal = (state.actual_cash + state.actual_nisa) - 2250;
         let aiData = { ...state, diff_total: diffTotal, inc_total: incBase };
@@ -250,9 +246,8 @@
             });
             const json = await res.json();
             if(json.advice) {
-                // マークダウンを簡単なHTMLに変換して表示
                 let htmlAdvice = json.advice.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-                document.getElementById('aiResult').innerHTML = `<div class="card" style="background:#F8FAFC; border-left:4px solid #3498db; margin-top:10px;">${htmlAdvice}</div>`;
+                document.getElementById('aiResult').innerHTML = `<div class="card" style="background:#FAFAFC; border-left:4px solid #3498db; margin-top:10px;">${htmlAdvice}</div>`;
             } else { alert("AIの取得に失敗しました"); }
         } catch(e) { alert("AI通信エラー"); }
         hideLoader();
@@ -314,7 +309,6 @@
         if(total >= 4000) { goalAge = "39歳"; isGoal = true; }
         tbody += `<tr><td style="text-align:left;">39歳(現)</td><td>${Math.floor(898+incDiff)}</td><td>0</td><td>${total}</td></tr>`;
 
-        // 収入のベース設定 (Streamlit版と同じ)
         const income_base = {40:1006, 41:1014, 42:1022, 43:1030, 44:1038, 45:1056, 46:1065, 47:1074, 48:1046, 49:1056, 50:1042, 51:1050, 52:1050};
 
         for(let age=40; age<=52; age++) {
@@ -329,4 +323,33 @@
             let rowClass = "";
             if(total >= 4000 && !isGoal) { goalAge = age + "歳"; isGoal = true; rowClass = "highlight"; }
             
-            tbody += `<tr class="${rowClass}"><td style="text-align:left;">${age}歳</td><td>${Math.floor(currentInc)}
+            tbody += `<tr class="${rowClass}"><td style="text-align:left;">${age}歳</td><td>${Math.floor(currentInc)}</td><td>${Math.floor(totalExp)}</td><td>${total}</td></tr>`;
+        }
+        document.getElementById('tableBody').innerHTML = tbody;
+
+        // ホーム画面の更新
+        let actTotal = state.actual_cash + state.actual_nisa;
+        document.getElementById('actualTotalVal').innerHTML = `${Math.floor(actTotal).toLocaleString()} <span style="font-size:14px">万円</span>`;
+        document.getElementById('actualSubVal').innerHTML = `現金: ${Math.floor(state.actual_cash).toLocaleString()}万<br>投資: ${Math.floor(state.actual_nisa).toLocaleString()}万`;
+        document.getElementById('actualTotalVal').style.color = (actTotal >= 2200) ? "var(--primary)" : "#FF3B30"; // 50万以内は青
+
+        let diffTotal = actTotal - 2250;
+        let alertHtml = "";
+        
+        if (diffTotal < -50) {
+            alertHtml += `<div class="alert alert-error">⚠️ 予定を ${Math.abs(Math.floor(diffTotal)).toLocaleString()} 万円 下回っています。</div>`;
+            alertHtml += `<button class="btn-ai" onclick="getAIAdvice()">✨ 専属AI-FPにアドバイスを求める</button>`;
+            alertHtml += `<div id="aiResult"></div>`;
+        } else {
+            let sign = diffTotal >= 0 ? '＋' : '';
+            alertHtml += `<div class="alert alert-success">✅ 完璧なペースです！生活レベルを維持して進んでください。<br><span style="font-size:12px">（乖離: ${sign}${Math.floor(diffTotal).toLocaleString()}万円）</span></div>`;
+        }
+        
+        document.getElementById('alertArea').innerHTML = alertHtml;
+        
+        let badgeText = goalAge === "47歳" ? "🎯 当初目標：47歳 (予定通り!)" : `🎯 当初目標：47歳 ➔ 最新予測：${goalAge}`;
+        document.getElementById('badgeArea').innerHTML = `<div class="badge">${badgeText}</div>`;
+    }
+</script>
+</body>
+</html>
