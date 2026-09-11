@@ -64,6 +64,7 @@
     // ==========================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzC3iq8613kqI9J9_TPMsVvi0iPIF_zP_qLyqVcMBOqSNV9VBas-PeNGQc3VN1cjV3i/exec";
     const APP_PASSWORD = "kensyouen@0722";
+    
     // ==========================================
 </script>
 
@@ -138,7 +139,7 @@
                 </div>
                 <div style="display:flex; gap:10px;">
                     <div style="flex:1"><label style="font-size:12px;">通信費</label><input type="number" id="s_tele" step="0.1"></div>
-                    <div style="flex:1"><label style="font-size:12px;">車(保険積立)</label><input type="number" id="s_car"></div>
+                    <div style="flex:1"><label style="font-size:12px;">車(保険等)</label><input type="number" id="s_car"></div>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <div style="flex:1"><label style="font-size:12px;">教育(塾等)</label><input type="number" id="s_edu"></div>
@@ -166,7 +167,7 @@
 
     <!-- ボトムタブバー -->
     <div class="tab-bar">
-        <div class="tab-item active" id="btnHome" onclick="switchTab('Home')"><span class="tab-icon">📊</span>ダッシュ</div>
+        <div class="tab-item active" id="btnHome" onclick="switchTab('Home')"><span class="tab-icon">📊</span>ダッシュボード</div>
         <div class="tab-item" id="btnPlan" onclick="switchTab('Plan')"><span class="tab-icon">⚙️</span>詳細設定</div>
     </div>
 </div>
@@ -190,7 +191,7 @@
         if(document.getElementById('passInput').value === APP_PASSWORD) {
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
-            fetchData(); // GASからデータ取得
+            fetchData(); 
         } else { alert("パスワードが違います"); }
     }
 
@@ -207,29 +208,44 @@
     }
     function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
 
-    // --- 通信処理 ---
+    // --- 通信処理（CORSブロック回避の強化版） ---
     async function fetchData() {
         showLoader("クラウドからデータを同期中...");
         try {
-            const res = await fetch(GAS_URL);
-            const json = await res.json();
+            const res = await fetch(GAS_URL, { redirect: "follow" });
+            const text = await res.text();
+            const json = JSON.parse(text);
             if(json.status === "success" && json.data) {
                 for(let key in json.data) { state[key] = parseFloat(json.data[key]) || 0; }
             }
             updateUI();
-        } catch(e) { alert("データ取得に失敗しました"); }
+        } catch(e) { 
+            console.error(e);
+            alert("データ取得に失敗しました。GASの権限が「全員」になっているか確認してください。"); 
+        }
         hideLoader();
     }
 
     async function saveDataToServer() {
         showLoader("クラウドに保存中...");
         try {
-            await fetch(GAS_URL, {
+            const res = await fetch(GAS_URL, {
                 method: "POST",
-                body: JSON.stringify({ action: "save", data: state })
+                headers: { "Content-Type": "text/plain;charset=utf-8" }, // ブロック回避のための設定
+                body: JSON.stringify({ action: "save", data: state }),
+                redirect: "follow"
             });
-            updateUI();
-        } catch(e) { alert("保存に失敗しました"); }
+            const text = await res.text();
+            const json = JSON.parse(text);
+            if(json.status === "success") {
+                updateUI();
+            } else {
+                alert("保存に失敗しました。");
+            }
+        } catch(e) { 
+            console.error(e);
+            alert("保存エラー: ネットワーク通信がブロックされました。"); 
+        }
         hideLoader();
     }
 
@@ -242,14 +258,17 @@
         try {
             const res = await fetch(GAS_URL, {
                 method: "POST",
-                body: JSON.stringify({ action: "ai_advice", data: aiData })
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ action: "ai_advice", data: aiData }),
+                redirect: "follow"
             });
-            const json = await res.json();
+            const text = await res.text();
+            const json = JSON.parse(text);
             if(json.advice) {
                 let htmlAdvice = json.advice.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-                document.getElementById('aiResult').innerHTML = `<div class="card" style="background:#FAFAFC; border-left:4px solid #3498db; margin-top:10px;">${htmlAdvice}</div>`;
-            } else { alert("AIの取得に失敗しました"); }
-        } catch(e) { alert("AI通信エラー"); }
+                document.getElementById('aiResult').innerHTML = `<div class="card" style="background:#F8FAFC; border-left:4px solid #3498db; margin-top:10px;">${htmlAdvice}</div>`;
+            } else { alert("AIからの応答がありませんでした"); }
+        } catch(e) { alert("AI通信エラー: ブロックされました"); }
         hideLoader();
     }
 
@@ -278,9 +297,7 @@
     }
 
     function updateUI() {
-        // 入力欄に値をセット
-        document.getElementById('inpCash').value = state.actual_cash;
-        document.getElementById('inpNisa').value = state.actual_nisa;
+        document.getElementById('inpCash').value = state.actual_cash; document.getElementById('inpNisa').value = state.actual_nisa;
         document.getElementById('s_hm').value = state.inc_h_m; document.getElementById('s_hb').value = state.inc_h_b;
         document.getElementById('s_wm').value = state.inc_w_m; document.getElementById('s_wb').value = state.inc_w_b;
         document.getElementById('s_food').value = state.exp_food; document.getElementById('s_util').value = state.exp_util;
@@ -289,7 +306,6 @@
         document.getElementById('s_wife').value = state.exp_wife; document.getElementById('s_free').value = state.exp_free;
         document.getElementById('s_inv').value = state.invest_amount;
 
-        // 計算
         let incBase = (state.inc_h_m*12 + state.inc_h_b) + (state.inc_w_m*12 + state.inc_w_b);
         let incDiff = incBase - 898;
         let expMonth = state.exp_food + state.exp_util + state.exp_tele + state.exp_car + state.exp_edu + state.exp_ins + state.exp_wife + state.exp_free;
@@ -297,7 +313,6 @@
 
         document.getElementById('baseInfo').innerHTML = `世帯年収 <b>${Math.floor(incBase)}万円</b> / 生活費 <b>${Math.floor(livingAnnual)}万円</b> / NISA <b>${state.invest_amount}万円</b>`;
 
-        // シミュレーション実行
         let simCash = state.actual_cash;
         let simNisa = state.actual_nisa;
         let currentLiving = livingAnnual;
@@ -322,16 +337,14 @@
 
             let rowClass = "";
             if(total >= 4000 && !isGoal) { goalAge = age + "歳"; isGoal = true; rowClass = "highlight"; }
-            
             tbody += `<tr class="${rowClass}"><td style="text-align:left;">${age}歳</td><td>${Math.floor(currentInc)}</td><td>${Math.floor(totalExp)}</td><td>${total}</td></tr>`;
         }
         document.getElementById('tableBody').innerHTML = tbody;
 
-        // ホーム画面の更新
         let actTotal = state.actual_cash + state.actual_nisa;
         document.getElementById('actualTotalVal').innerHTML = `${Math.floor(actTotal).toLocaleString()} <span style="font-size:14px">万円</span>`;
         document.getElementById('actualSubVal').innerHTML = `現金: ${Math.floor(state.actual_cash).toLocaleString()}万<br>投資: ${Math.floor(state.actual_nisa).toLocaleString()}万`;
-        document.getElementById('actualTotalVal').style.color = (actTotal >= 2200) ? "var(--primary)" : "#FF3B30"; // 50万以内は青
+        document.getElementById('actualTotalVal').style.color = (actTotal >= 2200) ? "var(--primary)" : "#FF3B30"; 
 
         let diffTotal = actTotal - 2250;
         let alertHtml = "";
@@ -344,9 +357,7 @@
             let sign = diffTotal >= 0 ? '＋' : '';
             alertHtml += `<div class="alert alert-success">✅ 完璧なペースです！生活レベルを維持して進んでください。<br><span style="font-size:12px">（乖離: ${sign}${Math.floor(diffTotal).toLocaleString()}万円）</span></div>`;
         }
-        
         document.getElementById('alertArea').innerHTML = alertHtml;
-        
         let badgeText = goalAge === "47歳" ? "🎯 当初目標：47歳 (予定通り!)" : `🎯 当初目標：47歳 ➔ 最新予測：${goalAge}`;
         document.getElementById('badgeArea').innerHTML = `<div class="badge">${badgeText}</div>`;
     }
