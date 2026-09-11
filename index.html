@@ -211,20 +211,25 @@
         }
         hideLoader();
     }
-
-    async function saveDataToServer() {
+async function saveDataToServer() {
         showLoader("クラウドに保存中...");
         try {
             const payload = encodeURIComponent(JSON.stringify({ action: "save", data: state }));
             const json = await fetchJSONP(GAS_URL + "?payload=" + payload);
-            if(json.status === "success") { updateUI(); } 
-            else { alert("保存に失敗しました。"); }
+            if(json.status === "success") { 
+                alert("クラウド保存に成功しました！"); // 成功時もわかりやすくしました
+                updateUI(); 
+            } 
+            else { 
+                // エラーの「本当の原因」を画面に表示します
+                alert("保存エラー原因: " + (json.message || json.error || "不明なエラー")); 
+            }
         } catch(e) { alert("通信エラー"); }
         hideLoader();
     }
 
     async function getAIAdvice() {
-        showLoader("AIが分析中... (数秒かかります)");
+        showLoader("AIが最新ニュースを分析中... (数秒かかります)");
         let incBase = (state.inc_h_m*12 + state.inc_h_b) + (state.inc_w_m*12 + state.inc_w_b);
         let diffTotal = (state.actual_cash + state.actual_nisa) - 2250;
         let aiData = { ...state, diff_total: diffTotal, inc_total: incBase };
@@ -235,8 +240,10 @@
             if(json.status === "success" && json.advice) {
                 let htmlAdvice = json.advice.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
                 document.getElementById('aiResult').innerHTML = `<div class="card" style="background:#F8FAFC; border-left:4px solid #3498db; margin-top:10px;">${htmlAdvice}</div>`;
-            } else { alert("AIの回答がありません"); }
-        } catch(e) { alert("AI通信エラー"); }
+            } else { 
+                alert("AIエラー原因: " + (json.message || json.error || "不明なエラー")); 
+            }
+        } catch(e) { alert("AI通信エラー: ネットワークを確認してください"); }
         hideLoader();
     }
 
