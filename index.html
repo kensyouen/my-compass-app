@@ -7,9 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="FW Compass">
     <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9ed.png">
-    
     <title>FW Compass</title>
-    
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --card: #FFFFFF; --text: #1C1C1E; --sub: #8E8E93; }
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -56,7 +54,7 @@
 
 <div id="loader" class="hidden">
     <div class="spinner"></div>
-    <div id="loaderText" style="color:#8E8E93; font-weight:600;">データを同期中...</div>
+    <div id="loaderText" style="color:#8E8E93; font-weight:600;">通信中...</div>
 </div>
 
 <div id="loginScreen" class="card" style="margin-top: 30vh;">
@@ -180,18 +178,36 @@
     }
     function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
 
-    // 🚀 【重要】iPhoneブロック回避のため、すべてGET通信に変更
+    // 🚀 Safariのブロックを完全突破する【JSONP】関数
+    function fetchJSONP(url) {
+        return new Promise((resolve, reject) => {
+            const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                resolve(data);
+            };
+            const script = document.createElement('script');
+            script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+            script.onerror = () => {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                reject(new Error("JSONP Error"));
+            };
+            document.body.appendChild(script);
+        });
+    }
+
     async function fetchData() {
         showLoader("クラウドからデータを同期中...");
         try {
-            const res = await fetch(GAS_URL);
-            const json = await res.json();
+            const json = await fetchJSONP(GAS_URL);
             if(json.status === "success" && json.data) {
                 for(let key in json.data) { state[key] = parseFloat(json.data[key]) || 0; }
             }
             updateUI();
         } catch(e) { 
-            alert("データ取得に失敗しました。GASのURLと権限(全員)を確認してください。"); 
+            alert("同期エラー: 通信が失敗しました"); 
         }
         hideLoader();
     }
@@ -199,39 +215,32 @@
     async function saveDataToServer() {
         showLoader("クラウドに保存中...");
         try {
-            // GETのURLパラメータにデータを乗せて送信（CORS回避）
             const payload = encodeURIComponent(JSON.stringify({ action: "save", data: state }));
-            const res = await fetch(GAS_URL + "?payload=" + payload);
-            const json = await res.json();
-            if(json.status === "success") {
-                updateUI();
-            } else {
-                alert("保存に失敗しました。");
-            }
-        } catch(e) { 
-            alert("通信エラー: iPhoneのブロックを突破できませんでした。"); 
-        }
+            const json = await fetchJSONP(GAS_URL + "?payload=" + payload);
+            if(json.status === "success") { updateUI(); } 
+            else { alert("保存に失敗しました。"); }
+        } catch(e) { alert("通信エラー"); }
         hideLoader();
     }
 
     async function getAIAdvice() {
-        showLoader("AIが最新ニュースを分析中...");
+        showLoader("AIが分析中... (数秒かかります)");
         let incBase = (state.inc_h_m*12 + state.inc_h_b) + (state.inc_w_m*12 + state.inc_w_b);
         let diffTotal = (state.actual_cash + state.actual_nisa) - 2250;
         let aiData = { ...state, diff_total: diffTotal, inc_total: incBase };
         
         try {
             const payload = encodeURIComponent(JSON.stringify({ action: "ai_advice", data: aiData }));
-            const res = await fetch(GAS_URL + "?payload=" + payload);
-            const json = await res.json();
+            const json = await fetchJSONP(GAS_URL + "?payload=" + payload);
             if(json.status === "success" && json.advice) {
                 let htmlAdvice = json.advice.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
                 document.getElementById('aiResult').innerHTML = `<div class="card" style="background:#F8FAFC; border-left:4px solid #3498db; margin-top:10px;">${htmlAdvice}</div>`;
-            } else { alert("AIの回答がありませんでした"); }
-        } catch(e) { alert("AI通信エラー: ネットワークを確認してください"); }
+            } else { alert("AIの回答がありません"); }
+        } catch(e) { alert("AI通信エラー"); }
         hideLoader();
     }
 
+    // --- UI更新・計算ロジック ---
     function saveHome() {
         state.actual_cash = parseFloat(document.getElementById('inpCash').value) || 0;
         state.actual_nisa = parseFloat(document.getElementById('inpNisa').value) || 0;
