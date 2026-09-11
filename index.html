@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- スマホアプリ化（PWA）のための魔法のタグ -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="FW Compass">
-    <!-- お好きな絵文字や画像をアイコンにできます -->
     <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9ed.png">
     
     <title>FW Compass</title>
@@ -16,41 +14,30 @@
         :root { --primary: #007AFF; --bg: #F2F2F7; --card: #FFFFFF; --text: #1C1C1E; --sub: #8E8E93; }
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { margin: 0; background-color: var(--bg); color: var(--text); padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
-        
         .card { background: var(--card); border-radius: 16px; padding: 20px; margin: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
         .header { text-align: center; margin-top: 10px; margin-bottom: 20px; }
-        
         input { width: 100%; padding: 12px; border: 1px solid #E5E5EA; border-radius: 12px; font-size: 16px; margin-top: 5px; margin-bottom: 15px; background: #FAFAFC; }
         button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
         button:active { opacity: 0.8; }
         .btn-ai { background: linear-gradient(135deg, #FF2D55, #FF9500); margin-top: 15px; }
-        
         .metric-box { display: flex; justify-content: space-between; align-items: center; text-align: center; }
         .metric-col { width: 45%; }
         .m-title { font-size: 13px; color: var(--sub); font-weight: 600; margin-bottom: 5px; }
         .m-val { font-size: 24px; font-weight: 700; }
         .m-sub { font-size: 12px; color: var(--sub); margin-top: 5px; line-height: 1.4; }
-        
         .badge { background: #FFF4E5; color: #FF9500; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; display: inline-block; margin-bottom: 15px; }
-        
-        /* 画面下部のタブバー */
         .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); display: flex; border-top: 1px solid #E5E5EA; padding-bottom: env(safe-area-inset-bottom); z-index: 100;}
         .tab-item { flex: 1; text-align: center; padding: 15px 0; color: var(--sub); font-size: 12px; font-weight: 600; cursor: pointer; }
         .tab-item.active { color: var(--primary); }
         .tab-icon { font-size: 20px; margin-bottom: 4px; display: block; }
-        
-        /* ローディング画面 */
         #loader { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.9); z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .spinner { border: 4px solid #E5E5EA; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px;}
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         .hidden { display: none !important; }
-        
         table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         th, td { border-bottom: 1px solid #E5E5EA; padding: 8px 4px; text-align: right; }
         th { color: var(--sub); font-weight: 600; }
         tr.highlight { background: #FFF4E5; font-weight: bold; }
-        
         .alert { padding: 15px; border-radius: 12px; margin-top: 15px; font-size: 14px; line-height: 1.5; }
         .alert-error { background: #FFEEEE; color: #FF3B30; border-left: 4px solid #FF3B30;}
         .alert-success { background: #E5F8ED; color: #34C759; }
@@ -62,19 +49,16 @@
     // ==========================================
     // 🗝️ 設定：ここに情報を入力してください！
     // ==========================================
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzC3iq8613kqI9J9_TPMsVvi0iPIF_zP_qLyqVcMBOqSNV9VBas-PeNGQc3VN1cjV3i/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzakRFz2_16BOsSGkT8UOuR0sX_vJwLO1_85VXSFnabmIoLGZJamKPlK9I65Nnm72kU/exec";
     const APP_PASSWORD = "kensyouen@0722";
-    
     // ==========================================
 </script>
 
-<!-- ローディング -->
 <div id="loader" class="hidden">
     <div class="spinner"></div>
     <div id="loaderText" style="color:#8E8E93; font-weight:600;">データを同期中...</div>
 </div>
 
-<!-- ログイン画面 -->
 <div id="loginScreen" class="card" style="margin-top: 30vh;">
     <h2 class="header">🧭 FW Compass</h2>
     <p style="text-align:center; color:#8E8E93; font-size:14px; margin-bottom:20px;">ご家庭専用プライベートツール</p>
@@ -82,10 +66,7 @@
     <button onclick="login()">ログイン</button>
 </div>
 
-<!-- アプリメイン画面 -->
 <div id="appScreen" class="hidden">
-    
-    <!-- タブ1: ホーム -->
     <div id="tabHome">
         <div class="card header">
             <div id="badgeArea"></div>
@@ -103,7 +84,6 @@
                 </div>
             </div>
         </div>
-
         <div class="card">
             <h4 style="margin-top:0;">🔄 実際の資産を更新</h4>
             <label style="font-size:13px; font-weight:600;">💰 現金・預金（万円）</label>
@@ -112,16 +92,13 @@
             <input type="number" id="inpNisa" step="10">
             <button onclick="saveHome()">クラウドに保存して再計算</button>
         </div>
-
         <div id="alertArea" style="padding: 0 15px;"></div>
     </div>
 
-    <!-- タブ2: 計画・設定 -->
     <div id="tabPlan" class="hidden">
         <div class="card">
             <h4 style="margin-top:0;">⚙️ 家計パラメータ設定</h4>
             <div id="baseInfo" style="font-size:13px; color:var(--sub); margin-bottom:15px;"></div>
-            
             <details style="background:#FAFAFC; padding:15px; border-radius:12px; margin-bottom:15px;">
                 <summary style="font-weight:600; cursor:pointer;">📝 収入・支出を細かく編集</summary>
                 <div style="display:flex; gap:10px; margin-top:10px;">
@@ -150,12 +127,10 @@
                     <div style="flex:1"><label style="font-size:12px;">使途不明金</label><input type="number" id="s_free"></div>
                 </div>
             </details>
-            
             <label style="font-size:13px; font-weight:600;">📈 NISA年間積立額（万円）</label>
             <input type="number" id="s_inv" step="5">
             <button onclick="saveSettings()">設定を保存して再計算</button>
         </div>
-
         <div class="card" style="padding:15px 10px;">
             <h4 style="margin-top:0; padding-left:5px;">📋 11年間ロードマップ</h4>
             <table>
@@ -165,7 +140,6 @@
         </div>
     </div>
 
-    <!-- ボトムタブバー -->
     <div class="tab-bar">
         <div class="tab-item active" id="btnHome" onclick="switchTab('Home')"><span class="tab-icon">📊</span>ダッシュボード</div>
         <div class="tab-item" id="btnPlan" onclick="switchTab('Plan')"><span class="tab-icon">⚙️</span>詳細設定</div>
@@ -173,7 +147,6 @@
 </div>
 
 <script>
-    // --- 初期データ ---
     let state = {
         actual_cash: 1880, actual_nisa: 370,
         inc_h_m: 43, inc_h_b: 130, inc_w_m: 16, inc_w_b: 60,
@@ -186,7 +159,6 @@
         46: {extra: 8}, 47: {extra: 8}, 48: {extra: 128}, 49: {extra: 112}, 50: {extra: -38}, 51: {extra: -38}, 52: {extra: -38}
     };
     
-    // --- 関数群 ---
     function login() {
         if(document.getElementById('passInput').value === APP_PASSWORD) {
             document.getElementById('loginScreen').classList.add('hidden');
@@ -208,20 +180,18 @@
     }
     function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
 
-    // --- 通信処理（CORSブロック回避の強化版） ---
+    // 🚀 【重要】iPhoneブロック回避のため、すべてGET通信に変更
     async function fetchData() {
         showLoader("クラウドからデータを同期中...");
         try {
-            const res = await fetch(GAS_URL, { redirect: "follow" });
-            const text = await res.text();
-            const json = JSON.parse(text);
+            const res = await fetch(GAS_URL);
+            const json = await res.json();
             if(json.status === "success" && json.data) {
                 for(let key in json.data) { state[key] = parseFloat(json.data[key]) || 0; }
             }
             updateUI();
         } catch(e) { 
-            console.error(e);
-            alert("データ取得に失敗しました。GASの権限が「全員」になっているか確認してください。"); 
+            alert("データ取得に失敗しました。GASのURLと権限(全員)を確認してください。"); 
         }
         hideLoader();
     }
@@ -229,22 +199,17 @@
     async function saveDataToServer() {
         showLoader("クラウドに保存中...");
         try {
-            const res = await fetch(GAS_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" }, // ブロック回避のための設定
-                body: JSON.stringify({ action: "save", data: state }),
-                redirect: "follow"
-            });
-            const text = await res.text();
-            const json = JSON.parse(text);
+            // GETのURLパラメータにデータを乗せて送信（CORS回避）
+            const payload = encodeURIComponent(JSON.stringify({ action: "save", data: state }));
+            const res = await fetch(GAS_URL + "?payload=" + payload);
+            const json = await res.json();
             if(json.status === "success") {
                 updateUI();
             } else {
                 alert("保存に失敗しました。");
             }
         } catch(e) { 
-            console.error(e);
-            alert("保存エラー: ネットワーク通信がブロックされました。"); 
+            alert("通信エラー: iPhoneのブロックを突破できませんでした。"); 
         }
         hideLoader();
     }
@@ -256,23 +221,17 @@
         let aiData = { ...state, diff_total: diffTotal, inc_total: incBase };
         
         try {
-            const res = await fetch(GAS_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ action: "ai_advice", data: aiData }),
-                redirect: "follow"
-            });
-            const text = await res.text();
-            const json = JSON.parse(text);
-            if(json.advice) {
+            const payload = encodeURIComponent(JSON.stringify({ action: "ai_advice", data: aiData }));
+            const res = await fetch(GAS_URL + "?payload=" + payload);
+            const json = await res.json();
+            if(json.status === "success" && json.advice) {
                 let htmlAdvice = json.advice.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
                 document.getElementById('aiResult').innerHTML = `<div class="card" style="background:#F8FAFC; border-left:4px solid #3498db; margin-top:10px;">${htmlAdvice}</div>`;
-            } else { alert("AIからの応答がありませんでした"); }
-        } catch(e) { alert("AI通信エラー: ブロックされました"); }
+            } else { alert("AIの回答がありませんでした"); }
+        } catch(e) { alert("AI通信エラー: ネットワークを確認してください"); }
         hideLoader();
     }
 
-    // --- UI更新・計算ロジック ---
     function saveHome() {
         state.actual_cash = parseFloat(document.getElementById('inpCash').value) || 0;
         state.actual_nisa = parseFloat(document.getElementById('inpNisa').value) || 0;
