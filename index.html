@@ -6,7 +6,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="FW Compass">
-    <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9ed.png">
+    <!-- アイコンをお金×手帳のイメージ（📒）に変更 -->
+    <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4d2.png">
     <title>FW Compass</title>
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --card: #FFFFFF; --text: #1C1C1E; --sub: #8E8E93; }
@@ -14,9 +15,11 @@
         body { margin: 0; background-color: var(--bg); color: var(--text); padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
         .card { background: var(--card); border-radius: 16px; padding: 20px; margin: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
         .header { text-align: center; margin-top: 10px; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; border: 1px solid #E5E5EA; border-radius: 12px; font-size: 16px; margin-top: 5px; margin-bottom: 15px; background: #FAFAFC; }
-        button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #E5E5EA; border-radius: 12px; font-size: 14px; background: #FAFAFC; }
+        button { padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; }
         button:active { opacity: 0.8; }
+        .btn-del { background: #FF3B30; color: white; width: 44px; padding: 0; border-radius: 12px; font-size: 20px; font-weight: bold; }
+        .btn-add { background: #E5E5EA; color: var(--primary); margin-top: 5px; margin-bottom: 15px; font-size: 14px; padding: 10px;}
         .btn-ai { background: linear-gradient(135deg, #FF2D55, #FF9500); margin-top: 15px; }
         .metric-box { display: flex; justify-content: space-between; align-items: center; text-align: center; }
         .metric-col { width: 45%; }
@@ -39,6 +42,7 @@
         .alert { padding: 15px; border-radius: 12px; margin-top: 15px; font-size: 14px; line-height: 1.5; }
         .alert-error { background: #FFEEEE; color: #FF3B30; border-left: 4px solid #FF3B30;}
         .alert-success { background: #E5F8ED; color: #34C759; }
+        .flex-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
     </style>
 </head>
 <body>
@@ -47,24 +51,22 @@
     // ==========================================
     // 🗝️ 設定：ここに情報を入力してください！
     // ==========================================
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxCj9hHh4dpZJw_ZsVT6171YMNAunUdCxJJXlozohjyURmixLPWdQxqH3tgQ4CM2PTd/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxCj9hHh4dpZJw_ZsVT6171YMNAunUdCxJJXlozohjyURmixLPWdQxqH3tgQ4CM2PTd/";
     const APP_PASSWORD = "kensyouen@0722";
     // ==========================================
 </script>
 
-<div id="loader" class="hidden">
-    <div class="spinner"></div>
-    <div id="loaderText" style="color:#8E8E93; font-weight:600;">通信中...</div>
-</div>
+<div id="loader" class="hidden"><div class="spinner"></div><div id="loaderText" style="color:#8E8E93; font-weight:600;">同期中...</div></div>
 
 <div id="loginScreen" class="card" style="margin-top: 30vh;">
-    <h2 class="header">🧭 FW Compass</h2>
+    <h2 class="header">📒 FW Compass</h2>
     <p style="text-align:center; color:#8E8E93; font-size:14px; margin-bottom:20px;">ご家庭専用プライベートツール</p>
     <input type="password" id="passInput" placeholder="パスワードを入力">
     <button onclick="login()">ログイン</button>
 </div>
 
 <div id="appScreen" class="hidden">
+    <!-- タブ1: ホーム -->
     <div id="tabHome">
         <div class="card header">
             <div id="badgeArea"></div>
@@ -93,38 +95,27 @@
         <div id="alertArea" style="padding: 0 15px;"></div>
     </div>
 
+    <!-- タブ2: 計画・設定 -->
     <div id="tabPlan" class="hidden">
         <div class="card">
             <h4 style="margin-top:0;">⚙️ 家計パラメータ設定</h4>
             <div id="baseInfo" style="font-size:13px; color:var(--sub); margin-bottom:15px;"></div>
-            <details style="background:#FAFAFC; padding:15px; border-radius:12px; margin-bottom:15px;">
-                <summary style="font-weight:600; cursor:pointer;">📝 収入・支出を細かく編集</summary>
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <div style="flex:1"><label style="font-size:12px;">夫 月収</label><input type="number" id="s_hm"></div>
-                    <div style="flex:1"><label style="font-size:12px;">夫 ボーナス</label><input type="number" id="s_hb"></div>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label style="font-size:12px;">妻 月収</label><input type="number" id="s_wm"></div>
-                    <div style="flex:1"><label style="font-size:12px;">妻 ボーナス</label><input type="number" id="s_wb"></div>
-                </div>
-                <hr style="border:0; border-top:1px solid #E5E5EA; margin:10px 0;">
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label style="font-size:12px;">食費・日用品</label><input type="number" id="s_food"></div>
-                    <div style="flex:1"><label style="font-size:12px;">水道光熱費</label><input type="number" id="s_util" step="0.1"></div>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label style="font-size:12px;">通信費</label><input type="number" id="s_tele" step="0.1"></div>
-                    <div style="flex:1"><label style="font-size:12px;">車(保険等)</label><input type="number" id="s_car"></div>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label style="font-size:12px;">教育(塾等)</label><input type="number" id="s_edu"></div>
-                    <div style="flex:1"><label style="font-size:12px;">保険料</label><input type="number" id="s_ins" step="0.1"></div>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label style="font-size:12px;">妻お小遣い</label><input type="number" id="s_wife" step="0.1"></div>
-                    <div style="flex:1"><label style="font-size:12px;">使途不明金</label><input type="number" id="s_free"></div>
-                </div>
+            
+            <details style="background:#FAFAFC; padding:15px; border-radius:12px; margin-bottom:15px;" open>
+                <summary style="font-weight:600; cursor:pointer;">📝 収入・支出をカスタマイズ</summary>
+                
+                <h5 style="margin-top:15px; margin-bottom:5px;">👩‍💼 収入項目（手取り / 万円）</h5>
+                <div id="incomesList"></div>
+                <button class="btn-add" onclick="addItem('inc')">＋ 収入項目を追加</button>
+
+                <hr style="border:0; border-top:1px solid #E5E5EA; margin:15px 0;">
+
+                <h5 style="margin-bottom:5px;">🛒 支出項目（月額 / 万円）</h5>
+                <div id="expensesList"></div>
+                <button class="btn-add" onclick="addItem('exp')">＋ 支出項目を追加</button>
+                
             </details>
+            
             <label style="font-size:13px; font-weight:600;">📈 NISA年間積立額（万円）</label>
             <input type="number" id="s_inv" step="5">
             <button onclick="saveSettings()">設定を保存して再計算</button>
@@ -139,18 +130,20 @@
     </div>
 
     <div class="tab-bar">
-        <div class="tab-item active" id="btnHome" onclick="switchTab('Home')"><span class="tab-icon">📊</span>ダッシュボード</div>
+        <div class="tab-item active" id="btnHome" onclick="switchTab('Home')"><span class="tab-icon">📊</span>ダッシュ</div>
         <div class="tab-item" id="btnPlan" onclick="switchTab('Plan')"><span class="tab-icon">⚙️</span>詳細設定</div>
     </div>
 </div>
 
 <script>
+    // --- 新しいデータ構造（自由設定対応） ---
     let state = {
-        actual_cash: 1880, actual_nisa: 370,
-        inc_h_m: 43, inc_h_b: 130, inc_w_m: 16, inc_w_b: 60,
-        exp_food: 14.8, exp_util: 1.5, exp_tele: 1.1, exp_car: 6, exp_edu: 5.4, exp_ins: 0.7, exp_wife: 1.9, exp_free: 17.3,
-        invest_amount: 60
+        actual_cash: 1880, actual_nisa: 370, invest_amount: 60,
+        incomes_json: "", expenses_json: ""
     };
+
+    let incomes = [];
+    let expenses = [];
 
     const futureData = {
         40: {extra: 0}, 41: {extra: 0}, 42: {extra: 0}, 43: {extra: 0}, 44: {extra: 200}, 45: {extra: 8},   
@@ -172,68 +165,84 @@
         document.getElementById('btnPlan').classList.toggle('active', tab === 'Plan');
     }
 
-    function showLoader(text) {
-        document.getElementById('loaderText').innerText = text;
-        document.getElementById('loader').classList.remove('hidden');
-    }
+    function showLoader(text) { document.getElementById('loaderText').innerText = text; document.getElementById('loader').classList.remove('hidden'); }
     function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
 
-    // 🚀 Safariのブロックを完全突破する【JSONP】関数
     function fetchJSONP(url) {
         return new Promise((resolve, reject) => {
             const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
             window[callbackName] = function(data) {
-                delete window[callbackName];
-                document.body.removeChild(script);
-                resolve(data);
+                delete window[callbackName]; document.body.removeChild(script); resolve(data);
             };
             const script = document.createElement('script');
             script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-            script.onerror = () => {
-                delete window[callbackName];
-                document.body.removeChild(script);
-                reject(new Error("JSONP Error"));
-            };
+            script.onerror = () => { delete window[callbackName]; document.body.removeChild(script); reject(new Error("JSONP Error")); };
             document.body.appendChild(script);
         });
     }
 
     async function fetchData() {
-        showLoader("クラウドからデータを同期中...");
+        showLoader("同期中...");
         try {
             const json = await fetchJSONP(GAS_URL);
             if(json.status === "success" && json.data) {
-                for(let key in json.data) { state[key] = parseFloat(json.data[key]) || 0; }
+                for(let key in json.data) { state[key] = json.data[key]; }
             }
+            // ★旧データから新データ構造(自由項目)への自動移行
+            if(!state.incomes_json) {
+                incomes = [
+                    {id: "i1", name: "夫 月収", val: parseFloat(state.inc_h_m)||43, is_bonus: false},
+                    {id: "i2", name: "夫 ボーナス(年)", val: parseFloat(state.inc_h_b)||130, is_bonus: true},
+                    {id: "i3", name: "妻 月収", val: parseFloat(state.inc_w_m)||16, is_bonus: false},
+                    {id: "i4", name: "妻 ボーナス(年)", val: parseFloat(state.inc_w_b)||60, is_bonus: true}
+                ];
+                expenses = [
+                    {id: "e1", name: "食費・日用品", val: parseFloat(state.exp_food)||14.8},
+                    {id: "e2", name: "水道光熱費", val: parseFloat(state.exp_util)||1.5},
+                    {id: "e3", name: "通信費", val: parseFloat(state.exp_tele)||1.1},
+                    {id: "e4", name: "車(保険等)", val: parseFloat(state.exp_car)||6},
+                    {id: "e5", name: "教育(塾等)", val: parseFloat(state.exp_edu)||5.4},
+                    {id: "e6", name: "保険料", val: parseFloat(state.exp_ins)||0.7},
+                    {id: "e7", name: "妻お小遣い", val: parseFloat(state.exp_wife)||1.9},
+                    {id: "e8", name: "使途不明金", val: parseFloat(state.exp_free)||17.3}
+                ];
+            } else {
+                incomes = JSON.parse(state.incomes_json);
+                expenses = JSON.parse(state.expenses_json);
+            }
+            state.actual_cash = parseFloat(state.actual_cash)||0;
+            state.actual_nisa = parseFloat(state.actual_nisa)||0;
+            state.invest_amount = parseFloat(state.invest_amount)||0;
             updateUI();
-        } catch(e) { 
-            alert("同期エラー: 通信が失敗しました"); 
-        }
+        } catch(e) { alert("同期エラー"); }
         hideLoader();
     }
-    
-async function saveDataToServer() {
-        showLoader("クラウドに保存中...");
+
+    async function saveDataToServer() {
+        showLoader("保存中...");
         try {
+            state.incomes_json = JSON.stringify(incomes);
+            state.expenses_json = JSON.stringify(expenses);
             const payload = encodeURIComponent(JSON.stringify({ action: "save", data: state }));
             const json = await fetchJSONP(GAS_URL + "?payload=" + payload);
-            if(json.status === "success") { 
-                alert("クラウド保存に成功しました！"); // 成功時もわかりやすくしました
-                updateUI(); 
-            } 
-            else { 
-                // エラーの「本当の原因」を画面に表示します
-                alert("保存エラー原因: " + (json.message || json.error || "不明なエラー")); 
-            }
+            if(json.status === "success") { updateUI(); } 
+            else { alert("保存失敗"); }
         } catch(e) { alert("通信エラー"); }
         hideLoader();
     }
 
     async function getAIAdvice() {
-        showLoader("AIが最新ニュースを分析中... (数秒かかります)");
-        let incBase = (state.inc_h_m*12 + state.inc_h_b) + (state.inc_w_m*12 + state.inc_w_b);
+        showLoader("AI分析中...");
+        let incBase = incomes.reduce((sum, i) => sum + (i.is_bonus ? parseFloat(i.val||0) : parseFloat(i.val||0)*12), 0);
         let diffTotal = (state.actual_cash + state.actual_nisa) - 2250;
-        let aiData = { ...state, diff_total: diffTotal, inc_total: incBase };
+        
+        // AIに教えるための家計内訳テキストを作成
+        let ai_context = "【収入】";
+        incomes.forEach(i => ai_context += `${i.name}:${i.val}万(${i.is_bonus?'年':'月'}) `);
+        ai_context += "\n【支出(月額)】";
+        expenses.forEach(e => ai_context += `${e.name}:${e.val}万 `);
+
+        let aiData = { ...state, diff_total: diffTotal, inc_total: incBase, ai_context: ai_context };
         
         try {
             const payload = encodeURIComponent(JSON.stringify({ action: "ai_advice", data: aiData }));
@@ -241,14 +250,62 @@ async function saveDataToServer() {
             if(json.status === "success" && json.advice) {
                 let htmlAdvice = json.advice.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
                 document.getElementById('aiResult').innerHTML = `<div class="card" style="background:#F8FAFC; border-left:4px solid #3498db; margin-top:10px;">${htmlAdvice}</div>`;
-            } else { 
-                alert("AIエラー原因: " + (json.message || json.error || "不明なエラー")); 
-            }
-        } catch(e) { alert("AI通信エラー: ネットワークを確認してください"); }
+            } else { alert("AIエラー"); }
+        } catch(e) { alert("AI通信エラー"); }
         hideLoader();
     }
 
-    // --- UI更新・計算ロジック ---
+    // --- 動的UIロジック ---
+    function renderLists() {
+        document.getElementById('incomesList').innerHTML = incomes.map(i => `
+            <div class="flex-row">
+                <input type="text" id="name_${i.id}" value="${i.name}" style="flex:2; margin:0;" placeholder="項目名">
+                <input type="number" id="val_${i.id}" value="${i.val}" step="0.1" style="flex:1; margin:0;">
+                <select id="type_${i.id}" style="flex:1.2; padding:12px; border-radius:12px; border:1px solid #E5E5EA; background:#FAFAFC;">
+                    <option value="false" ${!i.is_bonus ? "selected":""}>月額</option>
+                    <option value="true" ${i.is_bonus ? "selected":""}>年額(ﾎﾞｰﾅｽ)</option>
+                </select>
+                <button class="btn-del" onclick="removeItem('inc', '${i.id}')">×</button>
+            </div>
+        `).join('');
+
+        document.getElementById('expensesList').innerHTML = expenses.map(e => `
+            <div class="flex-row">
+                <input type="text" id="name_${e.id}" value="${e.name}" style="flex:2; margin:0;" placeholder="項目名">
+                <input type="number" id="val_${e.id}" value="${e.val}" step="0.1" style="flex:1; margin:0;" placeholder="万円/月">
+                <button class="btn-del" onclick="removeItem('exp', '${e.id}')">×</button>
+            </div>
+        `).join('');
+    }
+
+    function addItem(type) {
+        syncInputs(); // 現在の入力を一時保存
+        const newId = Date.now().toString();
+        if(type === 'inc') incomes.push({id: "i"+newId, name: "新規収入", val: 0, is_bonus: false});
+        if(type === 'exp') expenses.push({id: "e"+newId, name: "新規支出", val: 0});
+        renderLists();
+    }
+
+    function removeItem(type, id) {
+        syncInputs();
+        if(type === 'inc') incomes = incomes.filter(i => i.id !== id);
+        if(type === 'exp') expenses = expenses.filter(e => e.id !== id);
+        renderLists();
+    }
+
+    function syncInputs() {
+        incomes.forEach(i => {
+            i.name = document.getElementById('name_'+i.id).value;
+            i.val = parseFloat(document.getElementById('val_'+i.id).value) || 0;
+            i.is_bonus = document.getElementById('type_'+i.id).value === "true";
+        });
+        expenses.forEach(e => {
+            e.name = document.getElementById('name_'+e.id).value;
+            e.val = parseFloat(document.getElementById('val_'+e.id).value) || 0;
+        });
+    }
+
+    // --- 保存・計算 ---
     function saveHome() {
         state.actual_cash = parseFloat(document.getElementById('inpCash').value) || 0;
         state.actual_nisa = parseFloat(document.getElementById('inpNisa').value) || 0;
@@ -256,35 +313,21 @@ async function saveDataToServer() {
     }
 
     function saveSettings() {
-        state.inc_h_m = parseFloat(document.getElementById('s_hm').value) || 0;
-        state.inc_h_b = parseFloat(document.getElementById('s_hb').value) || 0;
-        state.inc_w_m = parseFloat(document.getElementById('s_wm').value) || 0;
-        state.inc_w_b = parseFloat(document.getElementById('s_wb').value) || 0;
-        state.exp_food = parseFloat(document.getElementById('s_food').value) || 0;
-        state.exp_util = parseFloat(document.getElementById('s_util').value) || 0;
-        state.exp_tele = parseFloat(document.getElementById('s_tele').value) || 0;
-        state.exp_car = parseFloat(document.getElementById('s_car').value) || 0;
-        state.exp_edu = parseFloat(document.getElementById('s_edu').value) || 0;
-        state.exp_ins = parseFloat(document.getElementById('s_ins').value) || 0;
-        state.exp_wife = parseFloat(document.getElementById('s_wife').value) || 0;
-        state.exp_free = parseFloat(document.getElementById('s_free').value) || 0;
+        syncInputs();
         state.invest_amount = parseFloat(document.getElementById('s_inv').value) || 0;
         saveDataToServer();
     }
 
     function updateUI() {
-        document.getElementById('inpCash').value = state.actual_cash; document.getElementById('inpNisa').value = state.actual_nisa;
-        document.getElementById('s_hm').value = state.inc_h_m; document.getElementById('s_hb').value = state.inc_h_b;
-        document.getElementById('s_wm').value = state.inc_w_m; document.getElementById('s_wb').value = state.inc_w_b;
-        document.getElementById('s_food').value = state.exp_food; document.getElementById('s_util').value = state.exp_util;
-        document.getElementById('s_tele').value = state.exp_tele; document.getElementById('s_car').value = state.exp_car;
-        document.getElementById('s_edu').value = state.exp_edu; document.getElementById('s_ins').value = state.exp_ins;
-        document.getElementById('s_wife').value = state.exp_wife; document.getElementById('s_free').value = state.exp_free;
+        document.getElementById('inpCash').value = state.actual_cash; 
+        document.getElementById('inpNisa').value = state.actual_nisa;
         document.getElementById('s_inv').value = state.invest_amount;
+        renderLists(); // 動的リストを描画
 
-        let incBase = (state.inc_h_m*12 + state.inc_h_b) + (state.inc_w_m*12 + state.inc_w_b);
+        // 計算
+        let incBase = incomes.reduce((sum, i) => sum + (i.is_bonus ? i.val : i.val*12), 0);
         let incDiff = incBase - 898;
-        let expMonth = state.exp_food + state.exp_util + state.exp_tele + state.exp_car + state.exp_edu + state.exp_ins + state.exp_wife + state.exp_free;
+        let expMonth = expenses.reduce((sum, e) => sum + e.val, 0);
         let livingAnnual = expMonth * 12;
 
         document.getElementById('baseInfo').innerHTML = `世帯年収 <b>${Math.floor(incBase)}万円</b> / 生活費 <b>${Math.floor(livingAnnual)}万円</b> / NISA <b>${state.invest_amount}万円</b>`;
